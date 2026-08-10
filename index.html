@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculus 1: Island-to-Shore Cable Optimization Lab</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- KaTeX CDN for mathematical typesetting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- Three.js for 3D Seabed & Island Visualizations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Glassmorphism Card Style */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-card-sm {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Custom Range Slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+      border: 2px solid #ffffff;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: #334155;
+      border-radius: 3px;
+    }
+
+    /* Math Formula Container Glow */
+    .math-box {
+      border-left: 4px solid #38bdf8;
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    /* Active Tab Highlight */
+    .tab-active {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col overflow-x-hidden select-none">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-cyan-500/20">
+          ⚡
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            Calculus I: Island Cable Optimization Lab
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+              First Derivative Test
+            </span>
+          </h1>
+          <p class="text-xs text-slate-400">Minimizing Underwater & Overland Cable Installation Cost</p>
+        </div>
+      </div>
+
+      <!-- Problem Scenario Selector Tabs -->
+      <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+        <button id="tab-power" onclick="selectPreset('power')" class="tab-active px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+          <span>🏝️</span> Power Grid
+        </button>
+        <button id="tab-fiber" onclick="selectPreset('fiber')" class="text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+          <span>📡</span> Fiber Optic
+        </button>
+        <button id="tab-pipe" onclick="selectPreset('pipe')" class="text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+          <span>🛢️</span> Offshore Pipeline
+        </button>
+      </div>
+
+      <!-- Mode Switch (Visualizer vs Practice Quiz) -->
+      <div class="flex items-center gap-2">
+        <button id="btn-mode-explore" onclick="switchMode('explore')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-cyan-400 border border-cyan-500/30">
+          🔍 Visualizer & Proof
+        </button>
+        <button id="btn-mode-quiz" onclick="switchMode('quiz')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/60 text-slate-400 hover:text-white border border-slate-700">
+          ✏️ Practice Challenge
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- VIEW 1: EXPLORE & DERIVATION MODE -->
+    <div id="view-explore" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT COLUMN (Controls & Derivation Steps - 5 Cols) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Card 1: Interactive Parameters & Slider -->
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 id="problem-title" class="font-bold text-white text-base flex items-center gap-2">
+              <span>🏝️</span> Island Power Grid Cable Optimization
+            </h2>
+            <button onclick="resetToOptimal()" class="text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2.5 py-1 rounded-lg transition-all font-medium flex items-center gap-1">
+              ⚡ Lock to Critical Point $x^*$
+            </button>
+          </div>
+
+          <!-- Problem Description Text -->
+          <p id="problem-description" class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+            An island lies $d$ km offshore from point $P$ on a straight coast. A power station $S$ is located $L$ km down the coast from $P$. Cable costs $\$C_w$/km underwater and $\$C_l$/km overland. Find landing point $X$ (at distance $x$ from $P$) to minimize total cost $C(x)$.
+          </p>
+
+          <!-- Dynamic Parameter Inputs -->
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Island Distance $d$ (km)</label>
+              <input id="input-d" type="number" value="6" min="1" max="20" step="0.5" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono" onchange="updateParam('d', this.value)">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Shore Length $L$ (km)</label>
+              <input id="input-L" type="number" value="10" min="2" max="30" step="0.5" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono" onchange="updateParam('L', this.value)">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Underwater Cost $C_w$ ($/km)</label>
+              <input id="input-Cw" type="number" value="100000" min="10000" max="500000" step="5000" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono" onchange="updateParam('Cw', this.value)">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Overland Cost $C_l$ ($/km)</label>
+              <input id="input-Cl" type="number" value="60000" min="5000" max="400000" step="5000" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono" onchange="updateParam('Cl', this.value)">
+            </div>
+          </div>
+
+          <!-- Variable Landing Point $x$ Slider -->
+          <div class="space-y-2 pt-2 border-t border-slate-800/60">
+            <div class="flex justify-between items-center text-xs">
+              <label for="slider-x" class="font-semibold text-slate-200 flex items-center gap-1.5">
+                Landing Point Distance ($x$ from $P$):
+              </label>
+              <span id="slider-x-val" class="font-mono text-cyan-400 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
+                x = 4.50 km
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <input id="slider-x" type="range" min="0.00" max="10.00" step="0.05" value="4.50" class="flex-1">
+              <button id="btn-play" onclick="toggleAnimate()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs border border-slate-700 transition">
+                ▶ Auto Sweep
+              </button>
+            </div>
+            
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>x = 0 (Direct to P)</span>
+              <span id="domain-max" class="text-amber-400/80">x = L (Direct to S)</span>
+            </div>
+          </div>
+
+          <!-- Computed Output Metrics -->
+          <div class="grid grid-cols-2 gap-2 pt-2">
+            <div class="glass-card-sm p-3 rounded-xl border border-slate-800 text-center">
+              <div class="text-[11px] text-slate-400">Total Cable Cost $C(x)$</div>
+              <div id="metric-1-value" class="text-base font-bold text-cyan-400 font-mono">$1,080,000</div>
+            </div>
+            <div class="glass-card-sm p-3 rounded-xl border border-slate-800 text-center">
+              <div class="text-[11px] text-slate-400">Derivative $C'(x)$</div>
+              <div id="metric-2-value" class="text-base font-bold text-emerald-400 font-mono">$0 / km</div>
+            </div>
+            <div class="glass-card-sm p-2.5 rounded-xl border border-slate-800 text-center">
+              <div class="text-[10px] text-slate-400">Underwater Dist. $\sqrt{d^2+x^2}$</div>
+              <div id="metric-underwater" class="text-xs font-semibold text-slate-200 font-mono">7.50 km</div>
+            </div>
+            <div class="glass-card-sm p-2.5 rounded-xl border border-slate-800 text-center">
+              <div class="text-[10px] text-slate-400">Overland Dist. $L-x$</div>
+              <div id="metric-overland" class="text-xs font-semibold text-slate-200 font-mono">5.50 km</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Rigorous Calculus Derivation Steps -->
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+              <span class="text-cyan-400">📐</span> Mathematical Step-by-Step Proof
+            </h3>
+            <span class="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">Calculus I Rigor</span>
+          </div>
+
+          <div class="space-y-3 text-xs text-slate-300">
+            <!-- Step 1: Function Formulation -->
+            <div class="math-box p-3 rounded-r-xl space-y-1">
+              <div class="font-semibold text-cyan-300">Step 1: Formulate Total Cost Objective Function</div>
+              <div id="math-step-1" class="text-slate-200 overflow-x-auto py-1 font-mono"></div>
+              <div id="math-domain" class="text-[11px] text-slate-400"></div>
+            </div>
+
+            <!-- Step 2: First Derivative -->
+            <div class="math-box p-3 rounded-r-xl space-y-1 border-indigo-500">
+              <div class="font-semibold text-indigo-300">Step 2: Differentiate to Find $C'(x)$</div>
+              <div id="math-step-2" class="text-slate-200 overflow-x-auto py-1 font-mono"></div>
+            </div>
+
+            <!-- Step 3: Critical Numbers -->
+            <div class="math-box p-3 rounded-r-xl space-y-1 border-amber-500">
+              <div class="font-semibold text-amber-300">Step 3: Solve Critical Point ($C'(x) = 0$)</div>
+              <div id="math-step-3" class="text-slate-200 overflow-x-auto py-1 font-mono"></div>
+            </div>
+
+            <!-- Step 4: First Derivative Test -->
+            <div class="math-box p-3 rounded-r-xl space-y-2 border-emerald-500">
+              <div class="font-semibold text-emerald-300">Step 4: Apply First Derivative Test Sign Analysis</div>
+              <div id="math-step-4-desc" class="text-slate-300 leading-relaxed text-[11px]"></div>
+              
+              <!-- Dynamic First Derivative Test Sign Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-center border-collapse border border-slate-700/60 rounded text-[11px]">
+                  <thead>
+                    <tr class="bg-slate-800/80 text-slate-300">
+                      <th class="p-1.5 border border-slate-700/60">Interval</th>
+                      <th class="p-1.5 border border-slate-700/60">Test Value ($x$)</th>
+                      <th class="p-1.5 border border-slate-700/60">Sign of $C'(x)$</th>
+                      <th class="p-1.5 border border-slate-700/60">Behavior of $C(x)$</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sign-table-body" class="font-mono">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="math-conclusion" class="p-2 rounded bg-emerald-950/40 border border-emerald-800/50 text-emerald-200 text-[11px] font-medium leading-relaxed">
+                <!-- Dynamic conclusion statement -->
+              </div>
+            </div>
+
+            <!-- Step 5: Snell's Law Optical Analogy -->
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1 text-[11px]">
+              <div class="font-semibold text-amber-300 flex items-center gap-1">
+                <span>💡</span> Physical Insight (Snell's Law of Refraction):
+              </div>
+              <p id="snell-insight-text" class="text-slate-300 leading-relaxed">
+                Notice at the critical point $x^*$, $\sin(\theta) = \frac{x^*}{\sqrt{d^2 + (x^*)^2}} = \frac{C_{land}}{C_{water}}$. This matches light refraction across media!
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN (3D/2D Visualizations & Dual Graph Canvas - 7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Visual Display Card (3D WebGL Scene & 2D Schematic) -->
+        <div class="glass-card rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+              <span class="text-cyan-400">🌊</span> Interactive Geographical Blueprint & 3D Seabed Scene
+            </h3>
+            <div class="text-[11px] text-slate-400 flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              Live Dynamic Route Views
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-64">
+            <!-- 2D Schematic Canvas -->
+            <div class="relative bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
+              <div class="absolute top-2 left-2 text-[10px] uppercase font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded">
+                2D Top-Down Blueprint
+              </div>
+              <canvas id="canvas-2d" class="w-full h-full"></canvas>
+            </div>
+
+            <!-- 3D Render Canvas -->
+            <div class="relative bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden flex flex-col">
+              <div class="absolute top-2 left-2 text-[10px] uppercase font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded z-10">
+                3D WebGL Coastal Scene
+              </div>
+              <div id="three-container" class="w-full h-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculus Plots Card (Dual Graphs: Cost $C(x)$ & Derivative $C'(x)$) -->
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div>
+              <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                <span class="text-indigo-400">📈</span> Dual Calculus Graph Plotter
+              </h3>
+              <p class="text-[11px] text-slate-400">Total Cost $C(x)$ (top) and Derivative $C'(x)$ (bottom)</p>
+            </div>
+            
+            <div class="flex items-center gap-3 text-[11px]">
+              <span class="flex items-center gap-1 text-cyan-400 font-medium">
+                <span class="w-3 h-0.5 bg-cyan-400 inline-block"></span> $C(x)$
+              </span>
+              <span class="flex items-center gap-1 text-emerald-400 font-medium">
+                <span class="w-3 h-0.5 bg-emerald-400 inline-block"></span> $C'(x)$
+              </span>
+              <span class="flex items-center gap-1 text-amber-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> $x^*$ Critical Pt
+              </span>
+            </div>
+          </div>
+
+          <!-- Dual Graph Canvas Container -->
+          <div class="relative bg-slate-950/90 rounded-xl border border-slate-800 p-2 h-80 flex flex-col">
+            <canvas id="canvas-graphs" class="w-full h-full cursor-crosshair"></canvas>
+          </div>
+
+          <!-- Graph Explanation Summary Bar -->
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+            <div class="font-semibold text-slate-200 flex items-center gap-1">
+              <span>💡</span> First Derivative Test Graph Interpretation:
+            </div>
+            <p id="graph-insight-text" class="text-slate-400 text-[11px] leading-relaxed">
+              For $x < x^*$, $C'(x) < 0$ (below horizontal axis), so cost $C(x)$ is decreasing ($\searrow$). For $x > x^*$, $C'(x) > 0$ (above axis), so cost $C(x)$ is increasing ($\nearrow$). The sign transition from negative to positive confirms a absolute minimum at $x^*$.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- VIEW 2: PRACTICE QUIZ MODE -->
+    <div id="view-quiz" class="hidden glass-card rounded-2xl p-6 max-w-4xl mx-auto space-y-6">
+      
+      <div class="border-b border-slate-800 pb-4 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>✏️</span> Island Cable Optimization Practice Challenge
+          </h2>
+          <p class="text-xs text-slate-400">Test your calculus skills: derive $C'(x)$, calculate $x^*$, and verify sign changes.</p>
+        </div>
+        <button onclick="generateNewQuizProblem()" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-500/20 transition-all">
+          🔄 Generate New Random Problem
+        </button>
+      </div>
+
+      <!-- Problem Statement Card -->
+      <div class="bg-slate-950/80 p-5 rounded-xl border border-slate-800 space-y-3">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
+          Target Problem Scenario
+        </span>
+        <div id="quiz-problem-text" class="text-sm text-slate-200 leading-relaxed font-medium">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Step-by-Step Interactive Answers -->
+      <div class="space-y-4 text-xs">
+        
+        <!-- Question 1: Derivative -->
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+          <label class="font-bold text-slate-200 block">
+            Question 1: What is the correct First Derivative $C'(x)$?
+          </label>
+          <div id="quiz-options-q1" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Dynamic radio buttons -->
+          </div>
+        </div>
+
+        <!-- Question 2: Critical Value -->
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+          <label class="font-bold text-slate-200 block">
+            Question 2: What is the optimal critical landing distance $x^*$ (in km) where $C'(x) = 0$?
+          </label>
+          <div class="flex items-center gap-3">
+            <input id="quiz-input-x" type="number" step="0.01" placeholder="Enter critical x*" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs w-48 focus:outline-none focus:border-cyan-500">
+            <span id="quiz-domain-hint" class="text-[11px] text-slate-400 font-mono"></span>
+          </div>
+        </div>
+
+        <!-- Question 3: First Derivative Test Sign Behavior -->
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+          <label class="font-bold text-slate-200 block">
+            Question 3: Applying the First Derivative Test as $x$ moves past $x^*$:
+          </label>
+          <div id="quiz-options-q3" class="space-y-2">
+            <!-- Dynamic options -->
+          </div>
+        </div>
+
+        <!-- Submit & Feedback Button -->
+        <div class="pt-2 flex items-center justify-between">
+          <button onclick="checkQuizAnswers()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all">
+            ✅ Verify Answers
+          </button>
+          
+          <div id="quiz-result-badge" class="hidden px-4 py-2 rounded-xl text-xs font-semibold"></div>
+        </div>
+
+        <!-- Detailed Solution Explanation Box (Revealed after check) -->
+        <div id="quiz-solution-box" class="hidden p-4 rounded-xl bg-cyan-950/30 border border-cyan-800/50 space-y-2">
+          <div class="font-bold text-cyan-300 text-xs">Solution Breakdown:</div>
+          <div id="quiz-solution-math" class="text-slate-300 text-xs space-y-2"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    /* Global Application State */
+    const state = {
+      preset: 'power', // 'power', 'fiber', 'pipe'
+      mode: 'explore', // 'explore', 'quiz'
+      isAnimating: false,
+      animFrameId: null,
+      
+      // Active Problem Parameters
+      params: {
+        d: 6.0,       // Island distance from shore P (km)
+        L: 10.0,      // Coast length P to S (km)
+        Cw: 100000,   // Underwater cost $/km
+        Cl: 60000,    // Overland cost $/km
+        x: 4.50       // Landing point distance from P (km)
+      },
+
+      // Quiz State
+      quiz: {
+        params: {},
+        correctDerivIndex: 0,
+        correctX: 0,
+        correctBehaviorIndex: 0
+      }
+    };
+
+    /* Presets Data Definitions */
+    const PRESETS = {
+      power: {
+        title: "Island Power Grid Cable Optimization",
+        icon: "🏝️",
+        desc: "An island lies d = 6 km offshore from point P. A power plant S is L = 10 km down the coast. Underwater cable costs $100,000/km and overland cable costs $60,000/km. Find landing point x to minimize total cost.",
+        d: 6.0, L: 10.0, Cw: 100000, Cl: 60000
+      },
+      fiber: {
+        title: "Offshore Fiber Optic Communication Line",
+        icon: "📡",
+        desc: "A research station on an island is d = 4 km from shore. Data hub S is L = 15 km down the coast. Subsea fiber costs $150,000/km vs overland at $50,000/km. Minimize optical cable installation cost.",
+        d: 4.0, L: 15.0, Cw: 150000, Cl: 50000
+      },
+      pipe: {
+        title: "Cross-Bay Oil & Gas Pipeline Crossing",
+        icon: "🛢️",
+        desc: "An offshore drilling rig lies d = 8 km from straight coastline point P. Refinery S is L = 12 km down shore. Subsea pipe costs $200,000/km and onshore pipe costs $120,000/km. Find x to minimize cost.",
+        d: 8.0, L: 12.0, Cw: 200000, Cl: 120000
+      }
+    };
+
+    /* Three.js Global Variables */
+    let scene, camera, renderer, cableMeshGroup;
+
+    /* Core Calculus Math Functions */
+    function evalCost(x, p) {
+      const underwaterDist = Math.sqrt(p.d * p.d + x * x);
+      const overlandDist = p.L - x;
+      return p.Cw * underwaterDist + p.Cl * overlandDist;
+    }
+
+    function evalCostPrime(x, p) {
+      const underwaterDist = Math.sqrt(p.d * p.d + x * x);
+      return (p.Cw * x) / underwaterDist - p.Cl;
+    }
+
+    function getOptimalX(p) {
+      if (p.Cw <= p.Cl) {
+        // If underwater is cheaper or equal to land, go direct underwater (x* = L)
+        return p.L;
+      }
+      const xUnbounded = (p.d * p.Cl) / Math.sqrt(p.Cw * p.Cw - p.Cl * p.Cl);
+      // Clamp to feasible domain [0, L]
+      return Math.min(p.L, Math.max(0, xUnbounded));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initThree();
+      selectPreset('power');
+
+      // Window Resize Listener for Responsive Canvases
+      window.addEventListener('resize', () => {
+        resizeThree();
+        draw2DSchematic();
+        drawCalculusGraphs();
+      });
+
+      // Slider listener
+      document.getElementById('slider-x').addEventListener('input', (e) => {
+        state.params.x = parseFloat(e.target.value);
+        updateAll();
+      });
+    });
+
+    /* Switch Problem Presets */
+    function selectPreset(key) {
+      state.preset = key;
+      const presetData = PRESETS[key];
+      state.params.d = presetData.d;
+      state.params.L = presetData.L;
+      state.params.Cw = presetData.Cw;
+      state.params.Cl = presetData.Cl;
+
+      ['power', 'fiber', 'pipe'].forEach(k => {
+        const el = document.getElementById(`tab-${k}`);
+        if (k === key) {
+          el.className = "tab-active px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5";
+        } else {
+          el.className = "text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5";
+        }
+      });
+
+      if (state.isAnimating) toggleAnimate();
+
+      // Update Form Inputs
+      document.getElementById('input-d').value = state.params.d;
+      document.getElementById('input-L').value = state.params.L;
+      document.getElementById('input-Cw').value = state.params.Cw;
+      document.getElementById('input-Cl').value = state.params.Cl;
+      document.getElementById('problem-title').innerHTML = `<span>${presetData.icon}</span> ${presetData.title}`;
+      document.getElementById('problem-description').innerText = presetData.desc;
+
+      resetToOptimal();
+    }
+
+    /* Switch Main View Mode (Explore vs Quiz) */
+    function switchMode(mode) {
+      state.mode = mode;
+      const exploreView = document.getElementById('view-explore');
+      const quizView = document.getElementById('view-quiz');
+      const btnExplore = document.getElementById('btn-mode-explore');
+      const btnQuiz = document.getElementById('btn-mode-quiz');
+
+      if (mode === 'explore') {
+        exploreView.classList.remove('hidden');
+        quizView.classList.add('hidden');
+        btnExplore.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-cyan-400 border border-cyan-500/30";
+        btnQuiz.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/60 text-slate-400 hover:text-white border border-slate-700";
+        setTimeout(() => { resizeThree(); updateAll(); }, 50);
+      } else {
+        exploreView.classList.add('hidden');
+        quizView.classList.remove('hidden');
+        btnQuiz.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-cyan-400 border border-cyan-500/30";
+        btnExplore.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/60 text-slate-400 hover:text-white border border-slate-700";
+        generateNewQuizProblem();
+      }
+    }
+
+    function updateParam(key, val) {
+      const pVal = parseFloat(val);
+      if (isNaN(pVal) || pVal <= 0) return;
+      state.params[key] = pVal;
+      resetToOptimal();
+    }
+
+    /* Reset slider to critical number x* */
+    function resetToOptimal() {
+      const optX = getOptimalX(state.params);
+      state.params.x = optX;
+
+      const slider = document.getElementById('slider-x');
+      slider.min = 0;
+      slider.max = state.params.L;
+      slider.step = (state.params.L / 200).toFixed(3);
+      slider.value = optX;
+
+      updateAll();
+    }
+
+    /* Update All Components */
+    function updateAll() {
+      const p = state.params;
+      const x = p.x;
+
+      document.getElementById('domain-max').innerText = `x = L (${p.L.toFixed(1)} km)`;
+      document.getElementById('slider-x-val').innerText = `x = ${x.toFixed(2)} km`;
+
+      // Evaluate functions
+      const costVal = evalCost(x, p);
+      const costPrimeVal = evalCostPrime(x, p);
+
+      const underwaterDist = Math.sqrt(p.d * p.d + x * x);
+      const overlandDist = p.L - x;
+
+      document.getElementById('metric-1-value').innerText = `$${Math.round(costVal).toLocaleString()}`;
+      document.getElementById('metric-2-value').innerText = `$${Math.round(costPrimeVal).toLocaleString()} / km`;
+      document.getElementById('metric-underwater').innerText = `${underwaterDist.toFixed(2)} km`;
+      document.getElementById('metric-overland').innerText = `${overlandDist.toFixed(2)} km`;
+      
+      if (Math.abs(costPrimeVal) < 1000) {
+        document.getElementById('metric-2-value').className = "text-base font-bold text-amber-400 font-mono animate-pulse";
+      } else {
+        document.getElementById('metric-2-value').className = "text-base font-bold text-emerald-400 font-mono";
+      }
+
+      // Render Dynamic Calculus Steps (KaTeX)
+      renderStepByStepMath();
+
+      // Render Visualizations
+      draw2DSchematic();
+      update3DModel();
+      drawCalculusGraphs();
+    }
+
+    /* Render Step-by-Step Derivation with KaTeX */
+    function renderStepByStepMath() {
+      const p = state.params;
+      const optX = getOptimalX(p);
+      const optCost = evalCost(optX, p);
+
+      const cwK = (p.Cw / 1000).toFixed(0);
+      const clK = (p.Cl / 1000).toFixed(0);
+
+      const math1 = `C(x) = ${cwK}k \\cdot \\sqrt{${p.d}^2 + x^2} + ${clK}k \\cdot (${p.L} - x)`;
+      const math2 = `C'(x) = \\frac{${cwK}k \\cdot x}{\\sqrt{${p.d}^2 + x^2}} - ${clK}k`;
+      const math3 = `\\frac{${cwK}k \\cdot x}{\\sqrt{${p.d}^2 + x^2}} = ${clK}k \\implies x^* = \\frac{${p.d} \\cdot ${clK}}{\\sqrt{${cwK}^2 - ${clK}^2}} = \\mathbf{${optX.toFixed(2)}\\text{ km}}`;
+
+      katex.render(math1, document.getElementById('math-step-1'), { displayMode: true, throwOnError: false });
+      document.getElementById('math-domain').innerText = `Feasible Domain: x \\in [0, ${p.L.toFixed(1)}] \\text{ km}`;
+      katex.render(`x \\in [0, ${p.L.toFixed(1)}]`, document.getElementById('math-domain'), { throwOnError: false });
+
+      katex.render(math2, document.getElementById('math-step-2'), { displayMode: true, throwOnError: false });
+      katex.render(math3, document.getElementById('math-step-3'), { displayMode: true, throwOnError: false });
+
+      document.getElementById('math-step-4-desc').innerHTML = `We evaluate the sign of $C'(x)$ in the intervals before and after critical point $x^* = ${optX.toFixed(2)}$ km:`;
+      katex.render(`C'(x)`, document.querySelector('#math-step-4-desc'), { throwOnError: false });
+
+      // Populate Sign Table
+      const xLeft = optX / 2;
+      const xRight = (optX + p.L) / 2;
+      const cpLeft = evalCostPrime(xLeft, p);
+      const cpRight = evalCostPrime(xRight, p);
+
+      const tableBody = document.getElementById('sign-table-body');
+      tableBody.innerHTML = `
+        <tr class="border-b border-slate-800">
+          <td class="p-1.5">(0, ${optX.toFixed(2)})</td>
+          <td class="p-1.5 text-slate-400">${xLeft.toFixed(2)}</td>
+          <td class="p-1.5 text-rose-400 font-bold">- (Negative)</td>
+          <td class="p-1.5 text-cyan-400">Decreasing ↘</td>
+        </tr>
+        <tr>
+          <td class="p-1.5">(${optX.toFixed(2)}, ${p.L.toFixed(1)})</td>
+          <td class="p-1.5 text-slate-400">${xRight.toFixed(2)}</td>
+          <td class="p-1.5 text-emerald-400 font-bold">+ (Positive)</td>
+          <td class="p-1.5 text-cyan-400">Increasing ↗</td>
+        </tr>
+      `;
+
+      // Conclusion Text
+      const conclusion = `
+        <strong>First Derivative Test Conclusion:</strong><br>
+        Since $C'(x)$ changes sign from <span class="text-rose-400 font-bold">NEGATIVE (-)</span> to <span class="text-emerald-400 font-bold">POSITIVE (+)</span> at $x^* = ${optX.toFixed(2)}$ km, there is an <strong>ABSOLUTE MINIMUM COST</strong> at $x^* = ${optX.toFixed(2)}$ km with minimum total installation cost <strong>$${Math.round(optCost).toLocaleString()}</strong>.
+      `;
+      document.getElementById('math-conclusion').innerHTML = conclusion;
+
+      // Snell's Law angle ratio
+      const sinTheta = (optX / Math.sqrt(p.d * p.d + optX * optX)).toFixed(3);
+      const costRatio = (p.Cl / p.Cw).toFixed(3);
+      document.getElementById('snell-insight-text').innerHTML = `
+        At critical landing point $x^* = ${optX.toFixed(2)}$ km, the angle $\\theta$ from perpendicular satisfies:<br>
+        $\\sin(\\theta) = \\frac{x^*}{\\sqrt{d^2 + (x^*)^2}} = ${sinTheta} = \\frac{C_{land}}{C_{water}} = \\frac{${clK}k}{${cwK}k} = ${costRatio}$. This exactly mirrors Snell's Law of optical refraction!
+      `;
+      katex.render(`\\sin(\\theta) = \\frac{x^*}{\\sqrt{d^2 + (x^*)^2}} = ${sinTheta} = \\frac{C_{land}}{C_{water}} = ${costRatio}`, document.getElementById('snell-insight-text'), { throwOnError: false });
+    }
+
+    /* Draw 2D Top-Down Blueprint Canvas */
+    function draw2DSchematic() {
+      const canvas = document.getElementById('canvas-2d');
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const p = state.params;
+      const x = p.x;
+
+      const pad = 35;
+      const wCanvas = canvas.width - pad * 2;
+      const hCanvas = canvas.height - pad * 2;
+
+      // Map geometry: Coastline is horizontal line at 60% canvas height
+      const coastY = canvas.height * 0.55;
+      const waterHeight = coastY;
+      const landHeight = canvas.height - coastY;
+
+      // Draw Water Region
+      const waterGrad = ctx.createLinearGradient(0, 0, 0, coastY);
+      waterGrad.addColorStop(0, '#0c4a6e');
+      waterGrad.addColorStop(1, '#0284c733');
+      ctx.fillStyle = waterGrad;
+      ctx.fillRect(0, 0, canvas.width, coastY);
+
+      // Draw Land Region
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, coastY, canvas.width, landHeight);
+
+      // Coastline Border
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, coastY);
+      ctx.lineTo(canvas.width, coastY);
+      ctx.stroke();
+
+      // Scale coordinates
+      const scaleX = wCanvas / (p.L * 1.2);
+      const scaleY = (coastY - pad) / (p.d * 1.3);
+
+      const pX = pad + p.L * 0.1 * scaleX;
+      const sX = pX + p.L * scaleX;
+      const landingX = pX + x * scaleX;
+      const islandY = coastY - p.d * scaleY;
+
+      // Draw Island (Circle)
+      ctx.fillStyle = '#0284c7';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pX, islandY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('Island', pX, islandY - 16);
+
+      // Draw Point P on Shore
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath(); ctx.arc(pX, coastY, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillText('P', pX - 10, coastY + 15);
+
+      // Draw Perpendicular Line from Island to P (Dashed)
+      ctx.strokeStyle = '#64748b';
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pX, islandY);
+      ctx.lineTo(pX, coastY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText(`d=${p.d}km`, pX - 22, (islandY + coastY) / 2);
+
+      // Draw Power Station S
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath(); ctx.arc(sX, coastY, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillText('Station S', sX, coastY + 18);
+
+      // Draw Landing Point X
+      ctx.fillStyle = '#34d399';
+      ctx.beginPath(); ctx.arc(landingX, coastY, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillText(`X (x=${x.toFixed(1)}km)`, landingX, coastY - 10);
+
+      // Draw Cable Line 1: Island -> X (Underwater - Cyan)
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(pX, islandY);
+      ctx.lineTo(landingX, coastY);
+      ctx.stroke();
+
+      // Draw Cable Line 2: X -> S (Overland - Amber)
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(landingX, coastY);
+      ctx.lineTo(sX, coastY);
+      ctx.stroke();
+
+      // Angle indicator theta at Island
+      const theta = Math.atan(x / p.d);
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(pX, islandY, 20, Math.PI / 2 - theta, Math.PI / 2);
+      ctx.stroke();
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillText('θ', pX + 12, islandY + 22);
+    }
+
+    /* Three.js 3D Setup */
+    function initThree() {
+      const container = document.getElementById('three-container');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1120);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(15, 20, 30);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0x38bdf8, 0.9);
+      dirLight.position.set(20, 30, 20);
+      scene.add(dirLight);
+
+      cableMeshGroup = new THREE.Group();
+      scene.add(cableMeshGroup);
+
+      rebuild3DScene();
+      animateThree();
+    }
+
+    function resizeThree() {
+      const container = document.getElementById('three-container');
+      if (!container || !renderer || !camera) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      if (cableMeshGroup) {
+        cableMeshGroup.rotation.y += 0.003; // Soft rotating view
+      }
+      renderer.render(scene, camera);
+    }
+
+    function rebuild3DScene() {
+      // Clear old meshes
+      while(cableMeshGroup.children.length > 0) { 
+        cableMeshGroup.remove(cableMeshGroup.children[0]); 
+      }
+
+      // Water Plane (Blue Transparent)
+      const waterGeom = new THREE.PlaneGeometry(35, 18);
+      const waterMat = new THREE.MeshPhongMaterial({
+        color: 0x0284c7, transparent: true, opacity: 0.5, side: THREE.DoubleSide
+      });
+      const waterPlane = new THREE.Mesh(waterGeom, waterMat);
+      waterPlane.rotation.x = -Math.PI / 2;
+      waterPlane.position.set(0, 0, -9);
+      cableMeshGroup.add(waterPlane);
+
+      // Land Plane (Coast - Dark Grey/Green)
+      const landGeom = new THREE.PlaneGeometry(35, 18);
+      const landMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+      const landPlane = new THREE.Mesh(landGeom, landMat);
+      landPlane.rotation.x = -Math.PI / 2;
+      landPlane.position.set(0, -0.05, 9);
+      cableMeshGroup.add(landPlane);
+
+      // Coastline Shore Stripe
+      const shoreGeom = new THREE.PlaneGeometry(35, 0.5);
+      const shoreMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      const shorePlane = new THREE.Mesh(shoreGeom, shoreMat);
+      shorePlane.rotation.x = -Math.PI / 2;
+      shorePlane.position.set(0, 0.01, 0);
+      cableMeshGroup.add(shorePlane);
+
+      // Island Cylinder
+      const islandGeom = new THREE.CylinderGeometry(2, 2.5, 1.5, 32);
+      const islandMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+      const islandMesh = new THREE.Mesh(islandGeom, islandMat);
+      islandMesh.name = "islandMesh";
+      cableMeshGroup.add(islandMesh);
+
+      // Station Box
+      const stationGeom = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+      const stationMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
+      const stationMesh = new THREE.Mesh(stationGeom, stationMat);
+      stationMesh.name = "stationMesh";
+      cableMeshGroup.add(stationMesh);
+
+      update3DModel();
+    }
+
+    function update3DModel() {
+      const p = state.params;
+      const x = p.x;
+
+      // Position Island
+      const islandMesh = cableMeshGroup.getObjectByName("islandMesh");
+      if (islandMesh) {
+        islandMesh.position.set(-10, 0.75, -p.d);
+      }
+
+      // Position Station S
+      const stationMesh = cableMeshGroup.getObjectByName("stationMesh");
+      if (stationMesh) {
+        stationMesh.position.set(-10 + p.L, 0.75, 0);
+      }
+
+      // Remove previous cable lines
+      const oldUnderwater = cableMeshGroup.getObjectByName("underwaterCable");
+      const oldOverland = cableMeshGroup.getObjectByName("overlandCable");
+      if (oldUnderwater) cableMeshGroup.remove(oldUnderwater);
+      if (oldOverland) cableMeshGroup.remove(oldOverland);
+
+      // Draw Underwater Cable (3D Tube)
+      const pIsland = new THREE.Vector3(-10, 0.2, -p.d);
+      const pLanding = new THREE.Vector3(-10 + x, 0.2, 0);
+      const pStation = new THREE.Vector3(-10 + p.L, 0.2, 0);
+
+      const underwaterPath = new THREE.LineCurve3(pIsland, pLanding);
+      const underwaterGeom = new THREE.TubeGeometry(underwaterPath, 20, 0.2, 8, false);
+      const underwaterMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const underwaterCable = new THREE.Mesh(underwaterGeom, underwaterMat);
+      underwaterCable.name = "underwaterCable";
+      cableMeshGroup.add(underwaterCable);
+
+      // Draw Overland Cable (3D Tube)
+      const overlandPath = new THREE.LineCurve3(pLanding, pStation);
+      const overlandGeom = new THREE.TubeGeometry(overlandPath, 20, 0.2, 8, false);
+      const overlandMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      const overlandCable = new THREE.Mesh(overlandGeom, overlandMat);
+      overlandCable.name = "overlandCable";
+      cableMeshGroup.add(overlandCable);
+    }
+
+    /* Dual Plotter Canvas (C(x) top, C'(x) bottom) */
+    function drawCalculusGraphs() {
+      const canvas = document.getElementById('canvas-graphs');
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const p = state.params;
+      const currentX = p.x;
+      const optX = getOptimalX(p);
+
+      // Layout Split: Top 52% for C(x), Bottom 40% for C'(x)
+      const hTop = canvas.height * 0.50;
+      const hBottom = canvas.height * 0.38;
+      const yOffsetBottom = canvas.height * 0.58;
+
+      const padL = 60, padR = 25, padT = 20;
+      const graphW = canvas.width - padL - padR;
+
+      // Sample points across domain [0, L]
+      const samples = 150;
+      const dx = p.L / samples;
+      let pointsCost = [], pointsCostPrime = [];
+
+      let maxCost = -Infinity, minCost = Infinity;
+      let maxCp = -Infinity, minCp = Infinity;
+
+      for (let i = 0; i <= samples; i++) {
+        const xVal = i * dx;
+        const cVal = evalCost(xVal, p);
+        const cpVal = evalCostPrime(xVal, p);
+
+        pointsCost.push({ x: xVal, y: cVal });
+        pointsCostPrime.push({ x: xVal, y: cpVal });
+
+        if (cVal > maxCost) maxCost = cVal;
+        if (cVal < minCost) minCost = cVal;
+        if (cpVal > maxCp) maxCp = cpVal;
+        if (cpVal < minCp) minCp = cpVal;
+      }
+
+      // Add vertical breathing space to Y bounds
+      const costRange = maxCost - minCost || 1;
+      maxCost += costRange * 0.15;
+      minCost -= costRange * 0.1;
+
+      const cpAbs = Math.max(Math.abs(maxCp), Math.abs(minCp)) * 1.2 || 1;
+      maxCp = cpAbs;
+      minCp = -cpAbs;
+
+      // Coordinate Mappings
+      const mapX = (x) => padL + (x / p.L) * graphW;
+      const mapYTop = (y) => padT + hTop - ((y - minCost) / (maxCost - minCost)) * hTop;
+      const mapYBottom = (y) => yOffsetBottom + hBottom / 2 - (y / maxCp) * (hBottom / 2);
+
+      /* --- DRAW GRAPH 1: C(x) Top --- */
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + (hTop / 4) * i;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + graphW, y); ctx.stroke();
+      }
+
+      // Curve C(x)
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pointsCost.forEach((pt, i) => {
+        const gx = mapX(pt.x);
+        const gy = mapYTop(pt.y);
+        if (i === 0) ctx.moveTo(gx, gy);
+        else ctx.lineTo(gx, gy);
+      });
+      ctx.stroke();
+
+      // Critical Point Marker on C(x)
+      const optGx = mapX(optX);
+      const optCostY = mapYTop(evalCost(optX, p));
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath(); ctx.arc(optGx, optCostY, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 10px Inter';
+      ctx.fillText(`Min Cost ($${Math.round(evalCost(optX, p)/1000)}k)`, optGx + 8, optCostY - 8);
+
+      /* --- DRAW GRAPH 2: C'(x) Bottom --- */
+      const zeroY = mapYBottom(0);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(padL, zeroY); ctx.lineTo(padL + graphW, zeroY); ctx.stroke();
+
+      // Sign Regions
+      ctx.fillStyle = '#f43f5e15'; // Negative region (cost decreasing)
+      ctx.fillRect(padL, zeroY, optGx - padL, yOffsetBottom + hBottom - zeroY);
+      ctx.fillStyle = '#10b98115'; // Positive region (cost increasing)
+      ctx.fillRect(optGx, yOffsetBottom, padL + graphW - optGx, zeroY - yOffsetBottom);
+
+      // Curve C'(x)
+      ctx.strokeStyle = '#34d399';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      pointsCostPrime.forEach((pt, i) => {
+        const gx = mapX(pt.x);
+        const gy = mapYBottom(pt.y);
+        if (i === 0) ctx.moveTo(gx, gy);
+        else ctx.lineTo(gx, gy);
+      });
+      ctx.stroke();
+
+      // Zero Intercept Dot
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath(); ctx.arc(optGx, zeroY, 5, 0, Math.PI * 2); ctx.fill();
+
+      /* --- CURRENT TRACKER LINE --- */
+      const currGx = mapX(currentX);
+      const currGyTop = mapYTop(evalCost(currentX, p));
+      const currGyBottom = mapYBottom(evalCostPrime(currentX, p));
+
+      ctx.strokeStyle = '#e2e8f0aa';
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(currGx, padT);
+      ctx.lineTo(currGx, yOffsetBottom + hBottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath(); ctx.arc(currGx, currGyTop, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#34d399';
+      ctx.beginPath(); ctx.arc(currGx, currGyBottom, 5, 0, Math.PI * 2); ctx.fill();
+
+      // Axis Labels
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'right';
+      ctx.fillText(`$${Math.round(maxCost/1000)}k`, padL - 6, padT + 10);
+      ctx.fillText(`C'(x)=0`, padL - 6, zeroY + 3);
+
+      ctx.textAlign = 'center';
+      ctx.fillText('x = 0', padL, canvas.height - 2);
+      ctx.fillText(`x* = ${optX.toFixed(2)}km`, optGx, canvas.height - 2);
+      ctx.fillText(`x = L (${p.L}km)`, padL + graphW, canvas.height - 2);
+    }
+
+    /* Auto Sweep Animation */
+    function toggleAnimate() {
+      const btn = document.getElementById('btn-play');
+      state.isAnimating = !state.isAnimating;
+
+      if (state.isAnimating) {
+        btn.innerText = "⏸ Pause";
+        btn.className = "p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs border border-cyan-400 transition font-bold";
+        stepAnimation();
+      } else {
+        btn.innerText = "▶ Auto Sweep";
+        btn.className = "p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs border border-slate-700 transition";
+        if (state.animFrameId) cancelAnimationFrame(state.animFrameId);
+      }
+    }
+
+    function stepAnimation() {
+      if (!state.isAnimating) return;
+      state.params.x += state.params.L / 300;
+      if (state.params.x > state.params.L) state.params.x = 0;
+
+      document.getElementById('slider-x').value = state.params.x;
+      updateAll();
+
+      state.animFrameId = requestAnimationFrame(stepAnimation);
+    }
+
+    /* Practice Quiz Challenge Generator */
+    function generateNewQuizProblem() {
+      const d = [3, 4, 5, 6, 8][Math.floor(Math.random() * 5)];
+      const L = [10, 12, 15, 20][Math.floor(Math.random() * 4)];
+      const Cw = [100, 150, 200, 250][Math.floor(Math.random() * 4)]; // $k/km
+      const Cl = [60, 80, 120, 150][Math.floor(Math.random() * 4)];  // $k/km
+
+      state.quiz.params = { d, L, Cw: Cw * 1000, Cl: Cl * 1000 };
+
+      const optX = getOptimalX(state.quiz.params);
+      state.quiz.correctX = parseFloat(optX.toFixed(2));
+
+      const pText = `An island is located $d = ${d}\\text{ km}$ offshore from point $P$. Power station $S$ is $L = ${L}\\text{ km}$ down the straight coast. Underwater cable costs $C_w = \\$${Cw},000/\\text{km}$ and overland cable costs $C_l = \\$${Cl},000/\\text{km}$. Find landing point $x^*$ to minimize cost.`;
+
+      document.getElementById('quiz-problem-text').innerText = pText;
+      katex.render(pText, document.getElementById('quiz-problem-text'), { throwOnError: false });
+
+      const q1Options = [
+        `C'(x) = \\frac{${Cw}k \\cdot x}{\\sqrt{${d}^2 + x^2}} - ${Cl}k`,
+        `C'(x) = \\frac{${Cw}k}{\\sqrt{${d}^2 + x^2}} - ${Cl}k \\cdot x`,
+        `C'(x) = ${Cw}k \\cdot \\sqrt{${d}^2 + x^2} - ${Cl}k(L-x)`,
+        `C'(x) = \\frac{${Cl}k \\cdot x}{\\sqrt{${d}^2 + x^2}} - ${Cw}k`
+      ];
+      state.quiz.correctDerivIndex = 0;
+
+      const q1Container = document.getElementById('quiz-options-q1');
+      q1Container.innerHTML = q1Options.map((opt, idx) => `
+        <label class="flex items-center space-x-2 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+          <input type="radio" name="quiz-q1" value="${idx}" class="text-cyan-500 focus:ring-0">
+          <span id="quiz-opt-q1-${idx}" class="text-slate-200 font-mono text-xs"></span>
+        </label>
+      `).join('');
+
+      q1Options.forEach((opt, idx) => {
+        katex.render(opt, document.getElementById(`quiz-opt-q1-${idx}`), { throwOnError: false });
+      });
+
+      document.getElementById('quiz-domain-hint').innerText = `Feasible Domain: [0, ${L}] km`;
+      document.getElementById('quiz-input-x').value = '';
+
+      const q3Options = [
+        "C'(x) changes from Negative (-) to Positive (+), proving a Local & Absolute Minimum",
+        "C'(x) changes from Positive (+) to Negative (-), proving a Local Maximum peak",
+        "C'(x) remains Negative throughout, so x* is an inflection point"
+      ];
+      state.quiz.correctBehaviorIndex = 0;
+
+      const q3Container = document.getElementById('quiz-options-q3');
+      q3Container.innerHTML = q3Options.map((opt, idx) => `
+        <label class="flex items-center space-x-2 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
+          <input type="radio" name="quiz-q3" value="${idx}" class="text-cyan-500 focus:ring-0">
+          <span class="text-slate-300 text-xs">${opt}</span>
+        </label>
+      `).join('');
+
+      document.getElementById('quiz-result-badge').className = "hidden";
+      document.getElementById('quiz-solution-box').className = "hidden";
+    }
+
+    /* Verify Quiz Answers */
+    function checkQuizAnswers() {
+      const selectedQ1 = document.querySelector('input[name="quiz-q1"]:checked');
+      const inputX = parseFloat(document.getElementById('quiz-input-x').value);
+      const selectedQ3 = document.querySelector('input[name="quiz-q3"]:checked');
+
+      const badge = document.getElementById('quiz-result-badge');
+      const solBox = document.getElementById('quiz-solution-box');
+
+      if (!selectedQ1 || isNaN(inputX) || !selectedQ3) {
+        badge.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40";
+        badge.innerText = "⚠️ Please answer all 3 questions before verifying!";
+        badge.classList.remove('hidden');
+        return;
+      }
+
+      const q1Correct = parseInt(selectedQ1.value) === state.quiz.correctDerivIndex;
+      const q2Correct = Math.abs(inputX - state.quiz.correctX) < 0.15;
+      const q3Correct = parseInt(selectedQ3.value) === state.quiz.correctBehaviorIndex;
+
+      if (q1Correct && q2Correct && q3Correct) {
+        badge.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        badge.innerText = "🎉 Excellent! All calculus derivations verified correctly!";
+      } else {
+        badge.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40";
+        badge.innerText = "❌ Some answers were incorrect. Check solution breakdown below!";
+      }
+      badge.classList.remove('hidden');
+
+      solBox.classList.remove('hidden');
+      const solMath = document.getElementById('quiz-solution-math');
+      solMath.innerHTML = `
+        <p>1. <strong>First Derivative $C'(x)$:</strong> Correct formula is Option #1.</p>
+        <p>2. <strong>Critical Landing Point:</strong> Setting $C'(x) = 0 \\implies x^* = \\mathbf{${state.quiz.correctX}\\text{ km}}$.</p>
+        <p>3. <strong>First Derivative Test:</strong> $C'(x) < 0$ for $x < x^*$ and $C'(x) > 0$ for $x > x^*$, confirming an Absolute Minimum.</p>
+      `;
+      katex.render(`C'(x)`, solMath.querySelector('strong'), { throwOnError: false });
+    }
+
+  </script>
+</body>
+</html>
